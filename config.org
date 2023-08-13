@@ -4,15 +4,28 @@
 #+STARTUP: showeverything
 #+OPTIONS: toc:2
 
+* Table Of Contents :toc:
+- [[#defining-commonly-used-variables][Defining Commonly Used Variables]]
+  - [[#common-locations][Common Locations]]
+- [[#these-programs-load-first][THESE PROGRAMS LOAD FIRST]]
+  - [[#loading-our-package-manager-elpaca][Loading our Package manager, ELPACA]]
+  - [[#loading-evil-mode-emacs-pinky-is-a-real-thing][Loading EVIL mode, EMACS pinky is a real thing]]
+  - [[#keybindings][Keybindings]]
+  - [[#loading-various-language-packages][Loading various language packages]]
+  - [[#themes-and-ui][Themes and UI]]
+  - [[#which-key][Which-Key]]
+
 * Defining Commonly Used Variables
 ** Common Locations
 #+begin_src emacs-lisp
   (setq config-dir "~/.config/emacs/")
   (setq config-file (concat config-dir "config.org"))
+  (setq init-file (concat config-dir "init.el"))
 #+end_src
 
 
 * THESE PROGRAMS LOAD FIRST
+
 ** Loading our Package manager, ELPACA
 
 From https://github.com/progfolio/elpaca#installer
@@ -93,58 +106,128 @@ From https://github.com/progfolio/elpaca#installer
 (use-package emacs :elpaca nil :config (setq ring-bell-function #'ignore))
 
 ;; Don't install anything. Defer execution of BODY
-(elpaca nil (message "deferred"))
+;; (elpaca nil (message "deferred"))
 #+end_src
 
 
 ** Keybindings
 #+begin_src emacs-lisp
-    (use-package general
+  (use-package general
       :config
       (general-evil-setup)
       (general-create-definer ae/leader-keys
-	:states '(normal insert visual emacs)
-	:keymaps 'override
-	:prefix "SPC"
-	:global-prefix "M-SPC")
+        :states '(normal insert visual emacs)
+        :keymaps 'override
+        :prefix "SPC"
+        :global-prefix "M-SPC")
 
       ;; buffer ops
       (ae/leader-keys
-	"b"  '(:ignore t :wk "buffer")
-	"bb" '(switch-to-buffer :wk "Switch Buffer")
-	"bk" '(kill-this-buffer :wk "Kill Current Buffer")
-	"bn" '(next-buffer      :wk "Next Buffer")
-	"bp" '(previous-buffer  :wk "Previous Buffer")
-	"br" '(revert-buffer    :wk "Reload Buffer")
+        "b"  '(:ignore t :wk "buffer")
+        "bb" '(switch-to-buffer :wk "Switch Buffer")
+        "bk" '(kill-this-buffer :wk "Kill Current Buffer")
+        "bi" '(ibuffer          :wk "IBuffer")
+        "bn" '(next-buffer      :wk "Next Buffer")
+        "bp" '(previous-buffer  :wk "Previous Buffer")
+        "br" '(revert-buffer    :wk "Reload Buffer")
       )
 
       ;; file ops
       ;; simple find-file alias to find my config
       (defalias 'find-config-file
-	 (lambda ()(interactive)(
-	   find-file config-file) ;; config-file is defined above
-	 )
+         (lambda ()(interactive)(
+           find-file config-file) ;; config-file is defined above
+         )
        )
-  
+
       (ae/leader-keys
        "f"  '(:ignore t         :wk "buffer")
        "ff" '(find-file         :wk "Find File")
        "fc" '(find-config-file  :wk "Find Config File")
       )
-    )
 
+      (ae/leader-keys
+      "h"    '(:ignore t         :wk "Help")
+      "hf"   '(describe-function :wk "Describe Function")
+      "hv"   '(describe-variable :wk "Describe Variable")
+      )
+
+      (defalias 'load-init-file
+         (lambda ()(interactive)
+           load-file init-file
+       ))
+
+      (ae/leader-keys
+      "r"    '(:ignore t                :wk "Reload")
+      "rc"   '(load-init-file :wk "Reload Configuration")  
+      "rf"   '(revert-buffer            :wk "Reload Current File")  
+      )
+
+  )
 #+end_src 
 
-** Loading in rust-mode
+** Loading various language packages
+*** Language Support
 #+begin_src emacs-lisp
+;; rust
 (use-package rust-mode)
+;; cmake
+(use-package cmake-mode)
+;; go
+(use-package go-mode)
+#+end_src
+*** Magit
+#+begin_src emacs-lisp
+(use-package magit)
+#+end_src
 
+** Themes and UI
+#+begin_src emacs-lisp
+  (use-package spacemacs-theme)
+  (elpaca-wait) ;; need to wait to be able to load the theme, since we aren't configuring it.
+  (load-theme 'spacemacs-dark t)
+#+end_src 
+
+*** Display Line numbers
+#+begin_src emacs-lisp
+(global-display-line-numbers-mode  1)
+(global-visual-line-mode           t)
+#+end_src
+
+*** Org-Mode
+Enable org bullets and TOC
+#+begin_src emacs-lisp
+    (use-package toc-org
+     :commands toc-org-enable
+     :init (add-hook 'org-mode-hook 'toc-org-enable))
+
+    ;; use org-bullets
+  (add-hook 'org-mode-hook 'org-indent-mode)
+  (use-package org-bullets)
+  (add-hook 'org-mode-hook (lambda () (org-bullets-mode 1)))
 #+end_src
 
 
-** Themes
+
+** Which-Key
 #+begin_src emacs-lisp
-  (use-package spacemacs-theme)
-  (elpaca-wait)
-  (load-theme 'spacemacs-dark t)
-#+end_src 
+  (use-package which-key
+  :init
+  (which-key-mode 1)
+  :config
+    (setq which-key-side-window-location 'bottom
+	  which-key-sort-order  #'which-key-key-order-alpha
+	  which-key-sort-uppercase-first nil
+	  which-key-add-column-padding 1
+	  which-key-max-display-columns nil
+	  which-key-min-display-lines 6
+	  which-key-side-window-slot -10
+	  which-key-side-window-max-height 0.25
+	  which-key-idel-delay 0.8
+	  which-key-max-description-length 25
+	  which-key-allow-imprecise-window-fit t
+	  which-key-separator " >> " )) ;; insert operator bcuz y not
+  
+#+end_src
+
+
